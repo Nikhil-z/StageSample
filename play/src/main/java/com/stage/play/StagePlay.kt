@@ -13,10 +13,13 @@ package com.stage.play
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.util.Util
+import androidx.media3.ui.DefaultTimeBar
 import com.stage.play.player.IntentUtil
 import com.stage.play.player.BasicActivity
 import com.stage.play.player.BasicActivity.Companion.KEY_HEARTBEAT
@@ -150,5 +153,7 @@ object StagePlay {
             }
         }
     }
+
+
 
 }

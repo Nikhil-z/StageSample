@@ -12,7 +12,9 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<merge xmlns:android="http://schemas.android.com/apk/res/android">
+<merge xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- 0dp dimensions are used to prevent this view from influencing the size of
          the parent view if it uses "wrap_content". It is expanded to occupy the
@@ -33,29 +35,6 @@
         android:layout_marginTop="@dimen/exo_styled_bottom_bar_margin_top"
         android:background="@color/exo_bottom_bar_background"
         android:layoutDirection="ltr">
-
-        <LinearLayout
-            android:id="@id/exo_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical|start"
-            android:layoutDirection="ltr"
-            android:paddingStart="@dimen/exo_styled_bottom_bar_time_padding"
-            android:paddingLeft="@dimen/exo_styled_bottom_bar_time_padding"
-            android:paddingEnd="@dimen/exo_styled_bottom_bar_time_padding"
-            android:paddingRight="@dimen/exo_styled_bottom_bar_time_padding">
-
-            <TextView
-                android:id="@id/exo_position"
-                style="@style/ExoStyledControls.TimeText.Position" />
-
-            <TextView style="@style/ExoStyledControls.TimeText.Separator" />
-
-            <TextView
-                android:id="@id/exo_duration"
-                style="@style/ExoStyledControls.TimeText.Duration" />
-
-        </LinearLayout>
 
         <LinearLayout
             android:id="@id/exo_basic_controls"
@@ -116,13 +95,54 @@
         </HorizontalScrollView>
 
     </FrameLayout>
-
-    <View
-        android:id="@id/exo_progress_placeholder"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="@dimen/exo_styled_progress_layout_height"
+        android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:layout_marginBottom="@dimen/exo_styled_progress_margin_bottom" />
+        android:layout_marginBottom="@dimen/exo_styled_progress_margin_bottom" >
+        <FrameLayout
+            android:id="@+id/previewFrameLayout"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@drawable/video_frame"
+            android:padding="2dp"
+            app:layout_constraintDimensionRatio="16:9"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintWidth_default="percent"
+            app:layout_constraintWidth_percent="0.25"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:visibility="visible">
+
+            <ImageView
+                android:id="@+id/scrubbingPreview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitXY" />
+
+        </FrameLayout>
+        <TextView
+            android:id="@id/exo_position"
+            style="@style/ExoStyledControls.TimeText.Position"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+        <androidx.media3.ui.DefaultTimeBar
+            android:id="@id/exo_progress"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="26dp"
+            app:layout_constraintStart_toEndOf="@+id/exo_position"
+            app:layout_constraintEnd_toStartOf="@+id/exo_duration"
+            app:layout_constraintTop_toBottomOf="@+id/previewFrameLayout"/>
+
+        <TextView
+            android:id="@id/exo_duration"
+            style="@style/ExoStyledControls.TimeText.Duration"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
 
     <LinearLayout
         android:id="@id/exo_minimal_controls"
@@ -151,41 +171,42 @@
         android:layoutDirection="ltr"
         android:padding="@dimen/exo_styled_controls_padding">
 
-        <FrameLayout
-            style="@style/ExoStyledControls.Button.Center"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="0dp"
-            android:addStatesFromChildren="true">
+<!--        <FrameLayout-->
+<!--            style="@style/ExoStyledControls.Button.Center"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:addStatesFromChildren="true">-->
             <!-- View's don't have foreground until API 23 so we have to nest in a parent. -->
             <Button
                 android:id="@id/exo_rew_with_amount"
-                style="@style/ExoStyledControls.Button.Center.RewWithAmount"
+                android:layout_height="40dp"
+                android:layout_width="40dp"
                 android:layout_marginLeft="0dp"
-                android:layout_marginRight="0dp"
+                android:layout_marginRight="50dp"
                 android:background="@drawable/ic_replay_10" />
 
-        </FrameLayout>
+<!--        </FrameLayout>-->
 
         <ImageButton
             android:id="@id/exo_play_pause"
             style="@style/ExoStyledControls.Button.Center.PlayPause" />
 
-        <FrameLayout
-            style="@style/ExoStyledControls.Button.Center"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="0dp"
-            android:addStatesFromChildren="true">
+<!--        <FrameLayout-->
+<!--            style="@style/ExoStyledControls.Button.Center"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_margin="0dp"-->
+<!--            android:addStatesFromChildren="true">-->
             <!-- View's don't have foreground until API 23 so we have to nest in a parent. -->
             <Button
                 android:id="@id/exo_rew_with_amount"
-                style="@style/ExoStyledControls.Button.Center.RewWithAmount"
-                android:layout_marginLeft="0dp"
+                android:layout_marginLeft="50dp"
                 android:layout_marginRight="0dp"
-                android:background="@drawable/ic_forward_10" />
+                android:background="@drawable/ic_forward_10"
+                android:layout_height="40dp"
+                android:layout_width="40dp" />
 
-        </FrameLayout>
+<!--        </FrameLayout>-->
 
     </LinearLayout>
 

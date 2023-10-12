@@ -43,6 +43,8 @@ dependencies {
 
     implementation ("org.checkerframework:checker-qual:3.38.0")
 
+//    implementation("com.github.rubensousa:previewseekbar:3.1.1")
+    implementation("com.github.bumptech.glide:glide:4.16.0")
     /*Media 3 player*/
     val  media3Version = "1.1.1"
 

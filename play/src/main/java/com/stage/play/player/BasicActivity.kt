@@ -21,10 +21,15 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.PersistableBundle
+import android.util.DisplayMetrics
+import android.util.Log
 import android.util.Pair
 import android.view.KeyEvent
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -55,12 +60,17 @@ import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ads.AdsLoader
 import androidx.media3.exoplayer.util.DebugTextViewHelper
 import androidx.media3.exoplayer.util.EventLogger
+import androidx.media3.ui.DefaultTimeBar
 import androidx.media3.ui.PlayerView
 import androidx.media3.ui.PlayerView.ControllerVisibilityListener
+import androidx.media3.ui.TimeBar
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.stage.play.R
 import com.stage.play.player.events.OnPlayEvents
 import com.stage.play.player.events.PlayEvents
 import com.stage.play.player.events.PlayerInfo
+import com.stage.play.seekbarpreview.GlideThumbnailTransformation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -68,6 +78,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull
+import java.security.AccessController.getContext
+
 
 /** An activity that plays media using [ExoPlayer].  */
 
@@ -104,8 +116,12 @@ sealed class BasicActivity : AppCompatActivity(), View.OnClickListener,
 
     private var _heartbeats: Boolean = false
     private var _heartbeatsIntervals: Long = DEFAULT_HEARTBEATS_INTERVAL
+    private lateinit var exo_progress: DefaultTimeBar
+    private lateinit var previewFrameLayout: FrameLayout
+    private lateinit var scrubbingPreview: ImageView
 
     // Activity lifecycle.
+    @OptIn(UnstableApi::class)
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         dataSourceFactory = DemoUtil.getDataSourceFactory( /* context= */this)
@@ -115,6 +131,36 @@ sealed class BasicActivity : AppCompatActivity(), View.OnClickListener,
         selectTracksButton = findViewById(R.id.select_tracks_button)
         selectTracksButton.setOnClickListener(this)
         playerView = findViewById(R.id.player_view)
+
+        exo_progress =
+            playerView.findViewById(androidx.media3.ui.R.id.exo_progress)
+        previewFrameLayout =
+            playerView.findViewById(R.id.previewFrameLayout)
+        scrubbingPreview =
+            playerView.findViewById(R.id.scrubbingPreview)
+
+        val thumbnailUrl =
+            "https://bitdash-a.akamaihd.net/content/MI201109210084_1/thumbnails/f08e80da-bf1d-4e3d-8899-f0f6155f6efa.jpg"
+        exo_progress.addListener(object : TimeBar.OnScrubListener {
+            override fun onScrubMove(timeBar: TimeBar, position: Long) {
+                previewFrameLayout.visibility = View.VISIBLE
+                val targetX = updatePreviewX(position.toInt(), player!!.duration.toInt())
+                Log.d("TARGET","TAR == ${targetX.toFloat()}")
+                previewFrameLayout.x = targetX.toFloat()
+                Glide.with(scrubbingPreview)
+                    .load(thumbnailUrl)
+                    .override(com.bumptech.glide.request.target.Target.SIZE_ORIGINAL, com.bumptech.glide.request.target.Target.SIZE_ORIGINAL)
+                    .transform(GlideThumbnailTransformation(position))
+                    .diskCacheStrategy(DiskCacheStrategy.RESOURCE)
+                    .into(scrubbingPreview)
+            }
+
+            override fun onScrubStop(timeBar: TimeBar, position: Long, canceled: Boolean) {
+                previewFrameLayout.visibility = View.INVISIBLE
+            }
+
+            override fun onScrubStart(timeBar: TimeBar, position: Long) {}
+        })
         playerView.setControllerVisibilityListener(this)
         playerView.setErrorMessageProvider(PlayerErrorMessageProvider())
         playerView.requestFocus()
@@ -635,6 +681,42 @@ sealed class BasicActivity : AppCompatActivity(), View.OnClickListener,
                 )
             }
             return builder.build()
+        }
+    }
+
+    private fun dpToPx(displayMetrics: DisplayMetrics, dps: Int): Int {
+        return (dps * displayMetrics.density).toInt()
+    }
+    @OptIn(UnstableApi::class)
+    private fun updatePreviewX(progress: Int, max: Int): Int {
+        if (max == 0) {
+            return 0
+        }
+
+        val parent = previewFrameLayout.parent as ViewGroup
+        val layoutParams = previewFrameLayout.layoutParams as ViewGroup.MarginLayoutParams
+        val offset = progress.toFloat() / max
+        val minimumX: Int = previewFrameLayout.left
+        val maximumX = (parent.width - parent.paddingRight - layoutParams.rightMargin)
+
+// We remove the padding of the scrubbing, if you have a custom size juste use dimen to calculate this
+
+        val previewPaddingRadius: Int = dpToPx(resources.displayMetrics, DefaultTimeBar.DEFAULT_SCRUBBER_DRAGGED_SIZE_DP).div(2)
+        val previewLeftX = (exo_progress as View).left.toFloat()
+        val previewRightX = (exo_progress as View).right.toFloat()
+        val previewSeekBarStartX: Float = previewLeftX + previewPaddingRadius
+        val previewSeekBarEndX: Float = previewRightX - previewPaddingRadius
+        val currentX = (previewSeekBarStartX + (previewSeekBarEndX - previewSeekBarStartX) * offset)
+        val startX: Float = currentX - previewFrameLayout.width / 2f
+        val endX: Float = startX + previewFrameLayout.width
+
+        // Clamp the moves
+        return if (startX >= minimumX && endX <= maximumX) {
+            startX.toInt()
+        } else if (startX < minimumX) {
+            minimumX
+        } else {
+            maximumX - previewFrameLayout.width
         }
     }
 }
